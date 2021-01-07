@@ -3,7 +3,7 @@
 #include <Arduino_HTS221.h>
 #include <BikeBLE.h>
 
-long previousMillis = 0;
+unsigned long previousMillis = 0;
 
 void setup() {
     Serial.begin(9600);
@@ -19,9 +19,6 @@ void setup() {
 
 
 void loop() {
-    float temp = HTS.readTemperature(CELSIUS);
-    Serial.println(temp);
-    delay(1000);
     // wait for a BLE central
     BLEDevice central = BLE.central();
     // if a central is connected to the peripheral:
@@ -32,13 +29,15 @@ void loop() {
         // turn on the LED to indicate the connection:
         digitalWrite(LED_BUILTIN, HIGH);
 
-        // check the battery level every 200ms
-        // while the central is connected:
         while (central.connected()) {
-            long currentMillis = millis();
-            if (currentMillis - previousMillis >= 200) {
+            unsigned long currentMillis = millis();
+            if (currentMillis - previousMillis >= 1000) {
                 previousMillis = currentMillis;
-                updateMeasuredDistance();
+                float temp = HTS.readTemperature(CELSIUS);
+                float humidity = HTS.readHumidity();
+                BikeBLE::writeTemperature(temp);
+                BikeBLE::writeHumidity(humidity);
+                Serial.println(temp);
             }
         }
         // when the central disconnects, turn off the LED:
@@ -47,4 +46,5 @@ void loop() {
         Serial.println(central.address());
     }
 }
+
 

@@ -12,6 +12,8 @@
 class BikeBLE {
 public:
     static void setupBLE();
+    static void writeTemperature(float temperatureCelsius);
+    static void writeHumidity(float humidity);
 };
 
 
