@@ -7,6 +7,7 @@
 BLEService bikeService("bdb7d889-18b3-4342-b7d7-e3201e5fa3ef");
 BLEFloatCharacteristic temperatureChar("f71b8d3f-eb1c-495f-9e61-b8a773f2867f", BLERead | BLENotify);
 BLEFloatCharacteristic humidityChar("8bbb426f-c7a9-4add-8037-68d290fc3875", BLERead | BLENotify);
+BLEDoubleCharacteristic distanceLeftChar("69c7acd2-d38d-4131-97ef-5d9095e5b4fd", BLERead | BLENotify);
 BLEDescriptor temperatureDescriptor("bdb7d889-18b3-4342-b7d7-e3201e5fa3ef", "Celsius");
 
 void BikeBLE::setupBLE() {
@@ -21,6 +22,7 @@ void BikeBLE::setupBLE() {
     BLE.setAdvertisedService(bikeService); // add the service UUID
     bikeService.addCharacteristic(temperatureChar);
     bikeService.addCharacteristic(humidityChar);
+    bikeService.addCharacteristic(distanceLeftChar);
     BLE.addService(bikeService);
     temperatureChar.addDescriptor(temperatureDescriptor);
     temperatureChar.writeValue(0); // set initial value for this characteristic
@@ -42,3 +44,8 @@ void BikeBLE::writeTemperature(float temperatureCelsius) {
 void BikeBLE::writeHumidity(float humidity) {
     humidityChar.writeValue(humidity);
 }
+
+void BikeBLE::writeDistanceLeft(double distance) {
+    distanceLeftChar.writeValue(distance);
+}
+

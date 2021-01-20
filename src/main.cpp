@@ -2,6 +2,7 @@
 #include <ArduinoBLE.h>
 #include <Arduino_HTS221.h>
 #include <BikeBLE.h>
+#include <HCSR04.h>
 
 
 const PinName GREEN = PinName::p16;
@@ -10,7 +11,12 @@ const PinName BLUE = PinName::p6;
 
 
 
-unsigned long previousMillis = 0;
+unsigned long previousMillisHCSR = 0;
+unsigned long previousMillisUltraSonic = 0;
+int ultraSonicTriggerPin = 11;
+int ultraSonicEchoPin = 12;
+UltraSonicDistanceSensor distanceLeftSensor(ultraSonicTriggerPin, ultraSonicEchoPin);
+
 
 void setup() {
     Serial.begin(9600);
@@ -31,7 +37,6 @@ void setup() {
 }
 
 
-
 void loop() {
     // wait for a BLE central
     BLEDevice central = BLE.central();
@@ -48,13 +53,17 @@ void loop() {
 
         while (central.connected()) {
             unsigned long currentMillis = millis();
-            if (currentMillis - previousMillis >= 1000) {
-                previousMillis = currentMillis;
+            if (currentMillis - previousMillisHCSR >= 1000) {
+                previousMillisHCSR = currentMillis;
                 float temp = HTS.readTemperature(CELSIUS);
                 float humidity = HTS.readHumidity();
                 BikeBLE::writeTemperature(temp);
                 BikeBLE::writeHumidity(humidity);
-                Serial.println(temp);
+            }
+            if (currentMillis - previousMillisUltraSonic >= 1000) {
+                previousMillisUltraSonic = currentMillis;
+                double distance = distanceLeftSensor.measureDistanceCm();
+                BikeBLE::writeDistanceLeft(distance);
             }
         }
         // when the central disconnects, turn off the LED:
