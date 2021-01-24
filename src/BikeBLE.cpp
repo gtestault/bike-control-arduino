@@ -7,7 +7,8 @@
 BLEService bikeService("bdb7d889-18b3-4342-b7d7-e3201e5fa3ef");
 BLEFloatCharacteristic temperatureChar("f71b8d3f-eb1c-495f-9e61-b8a773f2867f", BLERead | BLENotify);
 BLEFloatCharacteristic humidityChar("8bbb426f-c7a9-4add-8037-68d290fc3875", BLERead | BLENotify);
-BLEDoubleCharacteristic distanceLeftChar("69c7acd2-d38d-4131-97ef-5d9095e5b4fd", BLERead | BLENotify);
+BLEDoubleCharacteristic distanceLeftChar("4a874bc3-6295-4e7f-aed6-1fe2755774a7", BLERead | BLENotify);
+BLEBoolCharacteristic brakingChar("c2b4e981-089a-4a09-8241-0a73783ae4f5", BLEWrite);
 BLEDescriptor temperatureDescriptor("bdb7d889-18b3-4342-b7d7-e3201e5fa3ef", "Celsius");
 
 void BikeBLE::setupBLE() {
@@ -23,6 +24,7 @@ void BikeBLE::setupBLE() {
     bikeService.addCharacteristic(temperatureChar);
     bikeService.addCharacteristic(humidityChar);
     bikeService.addCharacteristic(distanceLeftChar);
+    bikeService.addCharacteristic(brakingChar);
     BLE.addService(bikeService);
     temperatureChar.addDescriptor(temperatureDescriptor);
     temperatureChar.writeValue(0); // set initial value for this characteristic
@@ -47,5 +49,8 @@ void BikeBLE::writeHumidity(float humidity) {
 
 void BikeBLE::writeDistanceLeft(double distance) {
     distanceLeftChar.writeValue(distance);
+}
+bool BikeBLE::readBraking() {
+    return brakingChar.value();
 }
 

@@ -21,7 +21,7 @@ class UltraSonicDistanceSensor {
      * to return.
      * @returns Distance in centimeters, or negative value if distance is greater than 400cm.
      */
-    double measureDistanceCm();
+    double measureDistanceCm(unsigned long echoTime);
 
     /**
      * Measures distance by sending ultrasonic waves and measuring time it takes them
@@ -29,7 +29,7 @@ class UltraSonicDistanceSensor {
      * @param temperature  Temperature in degrees celsius
      * @returns Distance in centimeters, or negative value if distance is greater than 400cm.
      */
-    double measureDistanceCm(float temperature);
+    double measureDistanceCm(float temperature, unsigned long echoTime);
  private:
     int triggerPin, echoPin;
 };
