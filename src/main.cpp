@@ -4,7 +4,11 @@
 #include <BikeBLE.h>
 #include <HCSR04.h>
 #include <LED.h>
+#include <Wire.h>
+#include <LIDARLite_v4LED.h>
 
+
+LIDARLite_v4LED myLidarLite;
 
 
 unsigned long currentMillis = 0;
@@ -13,6 +17,7 @@ unsigned long previousMillisUltraSonic = 0;
 unsigned long previousMillisBusyWait = 0;
 unsigned long previousMilliBlinking = 0;
 unsigned long blinkingSinceMilli = 0;
+
 int ultraSonicTriggerPin = 11;
 int ultraSonicEchoPin = 12;
 int backLightPin = 10;
@@ -41,6 +46,15 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(12), EchoPinISR, CHANGE);
 
 
+    // Initialize Arduino I2C (for communication to LidarLite)
+    Wire.begin();
+#ifdef FAST_I2C
+    #if ARDUINO >= 157
+            Wire.setClock(400000UL); // Set I2C frequency to 400kHz (for Arduino Due)
+        #else
+            TWBR = ((F_CPU / 400000UL) - 16) / 2; // Set I2C frequency to 400kHz
+        #endif
+#endif
 
     bool tempInit = HTS.begin();
     if (!tempInit) {
@@ -109,4 +123,19 @@ void loop() {
         Serial.print("Disconnected from central: ");
         Serial.println(central.address());
     }
+}
+
+
+uint8_t distanceSingle(uint16_t * distance)
+{
+    // 1. Trigger range measurement.
+    myLidarLite.takeRange();
+
+    // 2. Wait for busyFlag to indicate device is idle.
+    myLidarLite.waitForBusy();
+
+    // 3. Read new distance data from device registers
+    *distance = myLidarLite.readDistance();
+
+    return 1;
 }
