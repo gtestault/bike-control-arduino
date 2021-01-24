@@ -20,12 +20,13 @@ unsigned long previousMillisBusyWait = 0;
 unsigned long previousMilliBlinking = 0;
 unsigned long blinkingSinceMilli = 0;
 
+unsigned long braking = 0;
 int ultraSonicTriggerPin = 11;
 int ultraSonicEchoPin = 12;
 int backLightPin = 10;
 int sideLightPin = 9;
-bool blinking = false;
-bool on = false;
+bool laserBlinking = false;
+bool laserOn = false;
 double distance = 0;
 int blinkDuration = 3000;
 UltraSonicDistanceSensor distanceLeftSensor(ultraSonicTriggerPin, ultraSonicEchoPin);
@@ -46,6 +47,8 @@ void setup() {
     Serial.begin(9600);
     BikeBLE::setupBLE();
     LED::init();
+    pinMode(sideLightPin, OUTPUT);
+    pinMode(backLightPin, OUTPUT);
     attachInterrupt(digitalPinToInterrupt(12), EchoPinISR, CHANGE);
 
 
@@ -106,15 +109,15 @@ void loop() {
                 BikeBLE::writeHumidity(humidity);
             }
             if (currentMillis - previousMillisUltraSonic >= 100) {
-                //Serial.printf("d: %f, bb: %lu, cm: %lu, bl: %d \n", distance, blinkingSinceMilli+blinkDuration, currentMillis, blinking);
+                //Serial.printf("d: %f, bb: %lu, cm: %lu, bl: %d \n", distance, blinkingSinceMilli+blinkDuration, currentMillis, laserBlinking);
                 previousMillisUltraSonic = currentMillis;
                 distance = distanceLeftSensor.measureDistanceCm(LastPulseTime);
                 if (distance <= 150 && distance != -1) {
-                    blinking = true;
+                    laserBlinking = true;
                     blinkingSinceMilli = currentMillis;
                 }
                 if (currentMillis >= blinkingSinceMilli + blinkDuration) {
-                    blinking = false;
+                    laserBlinking = false;
                 }
             }
             if (currentMillis - previousMillisLidar >= 100) {
@@ -126,12 +129,12 @@ void loop() {
             if (currentMillis - previousMilliBlinking >= 500) {
                 Serial.printf("braking: %lu \n", BikeBLE::readBraking());
                 previousMilliBlinking = currentMillis;
-                if (blinking) {
-                    if (on) {
-                        on = !on;
+                if (laserBlinking) {
+                    if (laserOn) {
+                        laserOn = !laserOn;
                         digitalWrite(sideLightPin, LOW);
                     } else {
-                        on = !on;
+                        laserOn = !laserOn;
                         digitalWrite(sideLightPin, HIGH);
                     }
                 } else {
