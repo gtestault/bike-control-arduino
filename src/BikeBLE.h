@@ -15,7 +15,7 @@ public:
     static void writeTemperature(float temperatureCelsius);
     static void writeHumidity(float humidity);
     static void writeDistanceLeft(double distance);
-    static bool readBraking();
+    static unsigned long readBraking();
 };
 
 

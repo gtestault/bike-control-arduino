@@ -9,11 +9,13 @@
 
 
 LIDARLite_v4LED myLidarLite;
+uint8_t lidarBusyFlag = 0;
 
 
 unsigned long currentMillis = 0;
 unsigned long previousMillisHCSR = 0;
 unsigned long previousMillisUltraSonic = 0;
+unsigned long previousMillisLidar = 0;
 unsigned long previousMillisBusyWait = 0;
 unsigned long previousMilliBlinking = 0;
 unsigned long blinkingSinceMilli = 0;
@@ -28,6 +30,7 @@ double distance = 0;
 int blinkDuration = 3000;
 UltraSonicDistanceSensor distanceLeftSensor(ultraSonicTriggerPin, ultraSonicEchoPin);
 volatile unsigned long LastPulseTime = 0;
+uint16_t lidarDistance = 0;
 
 
 void EchoPinISR() {
@@ -46,7 +49,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(12), EchoPinISR, CHANGE);
 
 
-    // Initialize Arduino I2C (for communication to LidarLite)
+    // LIDAR SETUP: Initialize Arduino I2C (for communication to LidarLite)
     Wire.begin();
 #ifdef FAST_I2C
     #if ARDUINO >= 157
@@ -60,6 +63,15 @@ void setup() {
     if (!tempInit) {
         Serial.println("failed to initialize temperature sensor");
     }
+}
+bool distanceSingle(uint16_t * distance) {
+    lidarBusyFlag = myLidarLite.getBusyFlag();
+    if (!lidarBusyFlag) {
+        *distance = myLidarLite.readDistance();
+        myLidarLite.takeRange();
+        return true;
+    }
+    return false;
 }
 
 
@@ -78,7 +90,7 @@ void loop() {
         previousMillisBusyWait = millis();
         while (central.connected()) {
              currentMillis = millis();
-             if (currentMillis - previousMillisBusyWait >= 4000) {
+             if (currentMillis - previousMillisBusyWait >= 2000) {
                  LED::setBlue();
                  break;
              }
@@ -94,6 +106,7 @@ void loop() {
                 BikeBLE::writeHumidity(humidity);
             }
             if (currentMillis - previousMillisUltraSonic >= 100) {
+                //Serial.printf("d: %f, bb: %lu, cm: %lu, bl: %d \n", distance, blinkingSinceMilli+blinkDuration, currentMillis, blinking);
                 previousMillisUltraSonic = currentMillis;
                 distance = distanceLeftSensor.measureDistanceCm(LastPulseTime);
                 if (distance <= 150 && distance != -1) {
@@ -104,7 +117,14 @@ void loop() {
                     blinking = false;
                 }
             }
+            if (currentMillis - previousMillisLidar >= 100) {
+                previousMillisLidar = currentMillis;
+                if (distanceSingle(&lidarDistance)) {
+                }
+
+            }
             if (currentMillis - previousMilliBlinking >= 500) {
+                Serial.printf("braking: %lu \n", BikeBLE::readBraking());
                 previousMilliBlinking = currentMillis;
                 if (blinking) {
                     if (on) {
@@ -126,16 +146,3 @@ void loop() {
 }
 
 
-uint8_t distanceSingle(uint16_t * distance)
-{
-    // 1. Trigger range measurement.
-    myLidarLite.takeRange();
-
-    // 2. Wait for busyFlag to indicate device is idle.
-    myLidarLite.waitForBusy();
-
-    // 3. Read new distance data from device registers
-    *distance = myLidarLite.readDistance();
-
-    return 1;
-}
